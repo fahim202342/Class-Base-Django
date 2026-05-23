@@ -15,75 +15,89 @@ class StudentCreateListAPI(APIView):
         })
 
     def post(self, request):
-        serializer_data = StudentSerializer(data = request.data)
+        serializer_data = StudentSerializer(data=request.data)
         if serializer_data.is_valid():
             serializer_data.save()
             return Response({
                 'success': True,
-                'messages': 'Student Data Create Successfully',
+                'messages': 'Student Data Created Successfully',
                 'data': serializer_data.data
             })
         return Response({
             'success': False,
             'error': serializer_data.errors
         })
-        
 
 
 class StudentDetailListAPI(APIView):
-    def get_data(self, t_id):
+
+    def get_object(self, t_id):
         try:
-            student_data = StudentModel.objects.get(id = t_id)
-            return student_data
-        except:
+            return StudentModel.objects.get(id=t_id)
+        except StudentModel.DoesNotExist:
+            return None
+
+    def get(self, request, t_id):
+        student_data = self.get_object(t_id)
+        if not student_data:
             return Response({
                 'success': False,
-                'messages':'Student Data Not Found'
+                'messages': 'Student Data Not Found'
             })
-    def get(self, request, t_id):
-        
-        student_data = self.get_data(t_id)
+
         serializer_data = StudentSerializer(student_data)
         return Response({
             'success': True,
             'messages': 'Student Data Get Successfully',
             'data': serializer_data.data
         })
-    
-    def put(self, request, t_id):
-        student_data = self.get_data(id=t_id)
-        serializer_data =StudentSerializer(student_data, data = request.data)
-        if serializer_data.is_valid():
-            serializer_data.save()
-            return Response({
-            'success': True,
-            'messages': 'Student Data Updated Successfully',
-            'data': serializer_data.data
-        })
 
-    def patch(self, request, t_id):
-        student_data = self.get_data(id = t_id)
-        serializer_data = StudentSerializer(student_data, data = request.data, partial=True)
+    def put(self, request, t_id):
+        student_data = self.get_object(t_id)
+        if not student_data:
+            return Response({'success': False, 'message': 'Not Found'})
+
+        serializer_data = StudentSerializer(student_data, data=request.data)
         if serializer_data.is_valid():
             serializer_data.save()
             return Response({
                 'success': True,
-                'messages': 'Student Data Updated Successfully',
+                'messages': 'Student Updated Successfully',
                 'data': serializer_data.data
             })
+
         return Response({
             'success': False,
             'error': serializer_data.errors
         })
-        
+
     def patch(self, request, t_id):
-        self.get_data(id = t_id).delete()
+        student_data = self.get_object(t_id)
+        if not student_data:
+            return Response({'success': False, 'message': 'Not Found'})
+
+        serializer_data = StudentSerializer(student_data, data=request.data, partial=True)
+        if serializer_data.is_valid():
+            serializer_data.save()
+            return Response({
+                'success': True,
+                'messages': 'Student Partially Updated',
+                'data': serializer_data.data
+            })
+
         return Response({
-            'success': True,
-            'messages':'Student Data Deleted Successfully',
-            'data': []
+            'success': False,
+            'error': serializer_data.errors
         })
 
-        
+    def delete(self, request, t_id):
+        student_data = self.get_object(t_id)
+        if not student_data:
+            return Response({'success': False, 'message': 'Not Found'})
 
-        
+        student_data.delete()
+        return Response({
+            'success': True,
+            'messages': 'Student Deleted Successfully',
+            'data': []
+        })
